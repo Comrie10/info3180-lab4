@@ -22,8 +22,16 @@ def about():
     """Render the website's about page."""
     return render_template('about.html', name="Mary Jane")
 
+@app.route('/logout/')
+@login_required
+def logout():
+    logout_user()
+    flash('Your successfully logged out','success')
+    return redirect (url_for('home'))
 
-@app.route('/upload', methods=['POST', 'GET'])
+
+
+@app.route('/upload/', methods=['POST', 'GET'])
 @login_required
 def upload():
     # Instantiate your form class
@@ -45,7 +53,7 @@ def upload():
     return render_template('upload.html',form=form)
 
 
-@app.route('/login', methods=['POST', 'GET'])
+@app.route('/login/', methods=['POST', 'GET'])
 def login():
     form = LoginForm()
 
