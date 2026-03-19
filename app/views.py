@@ -1,8 +1,9 @@
 import os
 from app import app, db, login_manager
-from flask import render_template, request, redirect, url_for, flash, session, abort
+from flask import render_template, request, redirect, url_for, flash, session, abort, send_from_directory
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
+from werkzeug.datastructures import FileStorage
 from app.models import UserProfile
 from app.forms import LoginForm, UploadForm
 from werkzeug.security import check_password_hash
@@ -10,6 +11,17 @@ from werkzeug.security import check_password_hash
 ###
 # Routing for your application.
 ###
+
+def get_uploaded_images():
+    rootdir = os.getcwd()
+    print (rootdir)
+    images = []
+    for subdir, dirs, files in os.walk(rootdir + "/uploads"):
+        for file in files:
+            print (os.path.join(subdir, file))
+            relative_path = os.path.relpath ((os.path.join(subdir, file)),(app.config["UPLOAD_FOLDER"]))
+            images.append(relative_path)
+    return images
 
 @app.route('/')
 def home():
@@ -22,7 +34,7 @@ def about():
     """Render the website's about page."""
     return render_template('about.html', name="Mary Jane")
 
-@app.route('/logout/')
+@app.route('/logout')
 @login_required
 def logout():
     logout_user()
@@ -31,7 +43,7 @@ def logout():
 
 
 
-@app.route('/upload/', methods=['POST', 'GET'])
+@app.route('/upload', methods=['POST', 'GET'])
 @login_required
 def upload():
     # Instantiate your form class
@@ -41,10 +53,8 @@ def upload():
     if form.validate_on_submit():
         # Get file data and save to your uploads folder
         img = form.photo.data
-
-        name = secure_filename(img.name)
-
-        f_path = os.path.join("C:\\Users\\Admin\\Documents\\INFO3180\\info3180-lab4\\uploads",name)
+        filename = secure_filename(img.filename)
+        f_path = os.path.join("C:\\Users\\Admin\\Documents\\INFO3180\\info3180-lab4\\uploads",filename)
         img.save(f_path)
 
         flash('File Saved', 'success')
@@ -52,8 +62,19 @@ def upload():
 
     return render_template('upload.html',form=form)
 
+@app.route('/uploads/<path:filename>')
+@login_required
+def get_images(filename):
+    return send_from_directory(os.path.join(os.getcwd(), app.config["UPLOAD_FOLDER"]),filename)
 
-@app.route('/login/', methods=['POST', 'GET'])
+@app.route('/files')
+@login_required
+def files():
+    images = get_uploaded_images()
+    return render_template('files.html', images=images)
+
+
+@app.route('/login', methods=['POST', 'GET'])
 def login():
     form = LoginForm()
 
